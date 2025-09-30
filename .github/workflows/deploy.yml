@@ -65,14 +65,17 @@ jobs:
                         sudo npm install -g ts-node pm2
                       fi
 
-                      # Start or restart using PM2 with ecosystem.config.ts
-                        pm2 start dist/rest/index.js --name TwinBackend-REST || pm2 restart TwinBackend-REST
-                        pm2 start dist/ws/index.js --name TwinBackend-WS || pm2 restart TwinBackend-WS
+                      # Start or restart combined REST + WS server
+                      if pm2 describe TwinBackend >/dev/null 2>&1; then
+                          pm2 restart dist/main.js --name TwinBackend
+                      else
+                          pm2 start dist/main.js --name TwinBackend
+                      fi
 
-                      # Setup PM2 to start on system boot (ignore exit code)
-                        sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp $HOME || true
+                      # Setup PM2 to start on system boot (ignore errors)
+                      sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp $HOME || true
 
-                      # Save current process list
-                        pm2 save
+                      # Save current PM2 process list
+                      pm2 save
 
                       echo "Deployment completed!"
