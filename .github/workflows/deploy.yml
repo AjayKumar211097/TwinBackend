@@ -53,8 +53,7 @@ jobs:
 
                       # Install dependencies
                       cd "$PROJECT_DIR"
-                      npm install
-                      npm install -g ts-node pm2
+                      sudo npm install
 
 
                       # Build TypeScript
@@ -62,8 +61,8 @@ jobs:
 
                       # Install PM2 if missing
                       if ! command -v pm2 &> /dev/null; then
-                        echo "PM2 not found, installing..."
-                        sudo npm install -g pm2
+                      echo "PM2 not found, installing..."
+                        sudo npm install -g ts-node pm2
                       fi
 
                       # Start or restart using PM2 with ecosystem.config.ts
