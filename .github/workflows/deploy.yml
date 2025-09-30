@@ -20,6 +20,12 @@ jobs:
                   username: ${{ secrets.EC2_USER }}
                   key: ${{ secrets.EC2_SSH_KEY }}
                   script: |
+                      sudo apt update
+                      sudo apt install -y git curl
+                      curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+                      sudo apt install -y nodejs
+                      sudo npm install -g pm2
+
                       # Clone repo if not already present
                       if [ ! -d "~/TwinBackend" ]; then
                         git clone https://github.com/AjayKumar211097/TwinBackend.git ~/TwinBackend
