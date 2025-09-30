@@ -1,0 +1,41 @@
+name: Deploy to EC2
+
+on:
+    push:
+        branches: ["main"]
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            - name: Deploy via SSH
+              uses: appleboy/ssh-action@v0.1.7
+              with:
+                  host: ${{ secrets.EC2_HOST }}
+                  username: ${{ secrets.EC2_USER }}
+                  key: ${{ secrets.EC2_SSH_KEY }}
+                  script: |
+                      # Clone repo if not already present
+                      if [ ! -d "~/TwinBackend" ]; then
+                        git clone https://github.com/AjayKumar211097/TwinBackend.git ~/TwinBackend
+                      fi
+
+                      # Go to project folder
+                      cd ~/TwinBackend
+
+                      # Pull latest changes
+                      git fetch origin main
+                      git reset --hard origin/main
+
+                      # Install dependencies and build
+                      npm install
+                      npm run build
+
+                      # Restart processes with pm2 (start if not already running)
+                      pm2 restart rest || pm2 start dist/rest/index.js --name rest
+                      pm2 restart ws || pm2 start dist/ws/index.js --name ws
+                      pm2 save
