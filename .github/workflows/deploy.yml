@@ -54,6 +54,8 @@ jobs:
                       # Install dependencies
                       cd "$PROJECT_DIR"
                       npm install
+                      npm install -g ts-node pm2
+
 
                       # Build TypeScript
                       npx tsc
