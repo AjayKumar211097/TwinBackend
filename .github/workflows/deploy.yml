@@ -1,8 +1,9 @@
-name: Deploy to EC2
+name: Deploy TwinBackend
 
 on:
     push:
-        branches: ["main"]
+        branches:
+            - main
     workflow_dispatch:
 
 jobs:
@@ -10,39 +11,57 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - name: Checkout repository
+            - name: Checkout workflow repo
               uses: actions/checkout@v3
 
-            - name: Deploy via SSH
-              uses: appleboy/ssh-action@v0.1.7
+            - name: SSH to EC2 and deploy
+              uses: appleboy/ssh-action@v0.1.9
               with:
                   host: ${{ secrets.EC2_HOST }}
                   username: ${{ secrets.EC2_USER }}
                   key: ${{ secrets.EC2_SSH_KEY }}
                   script: |
-                      sudo yum update -y
-                      sudo yum install -y git curl
-                      curl -fsSL https://rpm.nodesource.com/setup_18.x | sudo bash -
-                      sudo yum install -y nodejs
-                      sudo npm install -g pm2
+                      #!/bin/bash
+                      set -e
 
-                      # Clone repo if not already present
-                      if [ ! -d "~/TwinBackend" ]; then
-                        git clone https://github.com/AjayKumar211097/TwinBackend.git ~/TwinBackend
+                      PROJECT_DIR=~/TwinBackend
+
+                      # Install git if missing
+                      if ! command -v git &> /dev/null; then
+                        echo "Git not found, installing..."
+                        sudo dnf install git -y
                       fi
 
-                      # Go to project folder
-                      cd ~/TwinBackend
+                      # Check if project exists
+                      if [ -d "$PROJECT_DIR" ]; then
+                        echo "Project exists, pulling latest changes..."
+                        cd "$PROJECT_DIR"
+                        git reset --hard
+                        git pull origin main
+                      else
+                        echo "Project does not exist, cloning..."
+                        git clone https://github.com/AjayKumar211097/TwinBackend.git "$PROJECT_DIR"
+                        cd "$PROJECT_DIR"
+                      fi
 
-                      # Pull latest changes
-                      git fetch origin main
-                      git reset --hard origin/main
+                      # Install Node.js if missing
+                      if ! command -v node &> /dev/null; then
+                        echo "Node.js not found, installing..."
+                        curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
+                        sudo dnf install -y nodejs
+                      fi
 
-                      # Install dependencies and build
+                      # Install dependencies
+                      cd "$PROJECT_DIR"
                       npm install
-                      npm run build
 
-                      # Restart processes with pm2 (start if not already running)
-                      pm2 restart rest || pm2 start dist/rest/index.js --name rest
-                      pm2 restart ws || pm2 start dist/ws/index.js --name ws
-                      pm2 save
+                      # Restart app (assumes pm2)
+                      if command -v pm2 &> /dev/null; then
+                        pm2 restart TwinBackend || pm2 start index.js --name TwinBackend
+                      else
+                        echo "PM2 not found, installing..."
+                        sudo npm install -g pm2
+                        pm2 start index.js --name TwinBackend
+                      fi
+
+                      echo "Deployment completed!"
