@@ -69,8 +69,10 @@ jobs:
                         pm2 start dist/rest/index.js --name TwinBackend-REST || pm2 restart TwinBackend-REST
                         pm2 start dist/ws/index.js --name TwinBackend-WS || pm2 restart TwinBackend-WS
 
-                      # Setup PM2 to start on system boot
-                        pm2 startup -u $USER --hp $HOME
+                      # Setup PM2 to start on system boot (ignore exit code)
+                        sudo env PATH=$PATH:/usr/bin pm2 startup systemd -u $USER --hp $HOME || true
+
+                      # Save current process list
                         pm2 save
 
                       echo "Deployment completed!"
