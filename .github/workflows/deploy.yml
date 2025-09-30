@@ -66,12 +66,11 @@ jobs:
                       fi
 
                       # Start or restart using PM2 with ecosystem.config.ts
-                      if [ -f "src/ecosystem.config.ts" ]; then
-                        npx pm2 start src/ecosystem.config.ts --only TwinBackend-REST || npx pm2 restart TwinBackend-REST
-                        npx pm2 start src/ecosystem.config.ts --only TwinBackend-WS || npx pm2 restart TwinBackend-WS
-                      else
-                        echo "ecosystem.config.ts not found!"
-                        exit 1
-                      fi
+                        pm2 start dist/rest/index.js --name TwinBackend-REST || pm2 restart TwinBackend-REST
+                        pm2 start dist/ws/index.js --name TwinBackend-WS || pm2 restart TwinBackend-WS
+
+                      # Setup PM2 to start on system boot
+                        pm2 startup -u $USER --hp $HOME
+                        pm2 save
 
                       echo "Deployment completed!"
