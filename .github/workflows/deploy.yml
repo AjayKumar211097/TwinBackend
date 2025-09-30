@@ -55,13 +55,23 @@ jobs:
                       cd "$PROJECT_DIR"
                       npm install
 
-                      # Restart app (assumes pm2)
-                      if command -v pm2 &> /dev/null; then
-                        pm2 restart TwinBackend || pm2 start index.js --name TwinBackend
-                      else
+                      # Build TypeScript
+                      npx tsc
+
+                      # Install PM2 if missing
+                      if ! command -v pm2 &> /dev/null; then
                         echo "PM2 not found, installing..."
                         sudo npm install -g pm2
-                        pm2 start index.js --name TwinBackend
+                      fi
+
+                      # Start or restart using PM2 with ecosystem.config.ts
+                      if [ -f "$PROJECT_DIR/ecosystem.config.ts" ]; then
+                        echo "Starting with PM2 ecosystem.config.ts"
+                        npx pm2 start ecosystem.config.ts --only TwinBackend-REST || npx pm2 restart TwinBackend-REST
+                        npx pm2 start ecosystem.config.ts --only TwinBackend-WS || npx pm2 restart TwinBackend-WS
+                      else
+                        echo "ecosystem.config.ts not found, using default start.js"
+                        pm2 start dist/start.js --name TwinBackend || pm2 restart TwinBackend
                       fi
 
                       echo "Deployment completed!"
