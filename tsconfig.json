@@ -9,5 +9,5 @@
     "resolveJsonModule": true,
     "skipLibCheck": true
   },
-  "include": ["src", "src/ecosystem.config.ts"]
+  "include": ["src"]
 }
